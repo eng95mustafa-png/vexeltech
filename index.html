@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VexelTech — Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── DESIGN TOKENS — Dark Electric Blue Theme ───────────────── */
+:root {
+  --ink:        #e8eaf6;
+  --ink2:       #9fa8c7;
+  --ink3:       #5c6490;
+  --paper:      #080b14;
+  --paper2:     #0e1220;
+  --paper3:     #111827;
+  --accent:     #00aaff;
+  --accent2:    #0077cc;
+  --accent-glow:rgba(0,170,255,.18);
+  --success:    #00e5a0;
+  --warning:    #ffb300;
+  --danger:     #ff4757;
+  --border:     rgba(0,170,255,.1);
+  --border2:    rgba(0,170,255,.22);
+  --r:          10px;
+  --r2:         16px;
+  --shadow:     0 2px 16px rgba(0,0,0,.5);
+  --shadow2:    0 8px 40px rgba(0,170,255,.12);
+  --font:       'Syne', sans-serif;
+  --mono:       'DM Mono', monospace;
+  --nav-w:      240px;
+  --topbar-h:   60px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: var(--font); background: var(--paper); color: var(--ink); }
+
+/* ── LAYOUT ────────────────────────────────────────────────── */
+#app     { display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: var(--nav-w); background: #070a12; border-right: 1px solid rgba(0,170,255,.12); color: var(--ink); display: flex; flex-direction: column; flex-shrink: 0; transition: transform .3s; }
+#main    { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#topbar  { height: var(--topbar-h); background: #0a0e1a; border-bottom: 1px solid rgba(0,170,255,.12); display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0; }
+#content { flex: 1; overflow-y: auto; padding: 28px 32px; background: var(--paper); }
+
+/* ── SIDEBAR ───────────────────────────────────────────────── */
+.sidebar-logo { padding: 22px 20px 16px; border-bottom: 1px solid rgba(0,170,255,.1); margin-bottom: 8px; }
+.sidebar-logo h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent); text-shadow: 0 0 20px rgba(0,170,255,.4); }
+.sidebar-logo span { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 2px; color: var(--ink3); }
+.nav-section { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink3); padding: 16px 20px 6px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ink2); border-radius: 0; transition: all .2s; border-left: 3px solid transparent; }
+.nav-item:hover  { background: rgba(0,170,255,.07); color: var(--ink); }
+.nav-item.active { background: rgba(0,170,255,.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon  { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-bottom  { margin-top: auto; padding: 16px 20px; border-top: 1px solid rgba(0,170,255,.08); font-size: 12px; color: var(--ink3); }
+
+/* ── TOPBAR ────────────────────────────────────────────────── */
+.topbar-title { font-size: 18px; font-weight: 700; flex: 1; color: var(--ink); }
+.topbar-badge { background: var(--accent); color: #000; font-size: 11px; padding: 2px 10px; border-radius: 20px; font-weight: 700; }
+
+/* ── CARDS ─────────────────────────────────────────────────── */
+.card { background: var(--paper3); border: 1px solid rgba(0,170,255,.13); border-radius: var(--r2); padding: 20px 24px; box-shadow: 0 4px 24px rgba(0,0,0,.3); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-title  { font-size: 15px; font-weight: 700; color: var(--ink); }
+.card-sub    { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+/* ── STAT CARDS ────────────────────────────────────────────── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card  { background: var(--paper3); border: 1px solid rgba(0,170,255,.15); border-radius: var(--r2); padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.3); position: relative; overflow: hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background: linear-gradient(90deg, var(--accent), transparent); }
+.stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--ink3); }
+.stat-value { font-size: 28px; font-weight: 800; margin-top: 6px; letter-spacing: -1px; }
+.stat-sub   { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+.stat-accent { color: var(--accent); text-shadow: 0 0 12px rgba(0,170,255,.3); }
+.stat-green  { color: var(--success); text-shadow: 0 0 12px rgba(0,229,160,.2); }
+.stat-red    { color: var(--danger);  text-shadow: 0 0 12px rgba(255,71,87,.2); }
+.stat-amber  { color: var(--warning); text-shadow: 0 0 12px rgba(255,179,0,.2); }
+
+/* ── GRID LAYOUTS ──────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* ── FORMS ─────────────────────────────────────────────────── */
+.form-row    { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.form-group  { display: flex; flex-direction: column; gap: 5px; }
+label        { font-size: 12px; font-weight: 600; color: var(--ink2); text-transform: uppercase; letter-spacing: .5px; }
+input, select, textarea {
+  background: #0a0e1a; border: 1px solid rgba(0,170,255,.2); border-radius: var(--r);
+  padding: 9px 12px; font-family: var(--font); font-size: 14px; color: var(--ink);
+  outline: none; transition: border-color .2s, box-shadow .2s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,170,255,.1); }
+select option { background: #0e1220; color: var(--ink); }
+
+/* ── BUTTONS ───────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--r); border: none; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn-primary  { background: var(--accent);  color: #fff; }
+.btn-primary:hover  { background: var(--accent2); }
+.btn-success  { background: var(--success); color: #fff; }
+.btn-danger   { background: var(--danger);  color: #fff; }
+.btn-ghost    { background: transparent; border: 1px solid rgba(0,170,255,.25); color: var(--ink2); }
+.btn-ghost:hover { background: rgba(0,170,255,.07); color: var(--ink); }
+.btn-sm       { padding: 5px 12px; font-size: 12px; }
+.btn-icon     { padding: 6px 8px; font-size: 14px; border-radius: 6px; background: transparent; border: 1px solid rgba(255,71,87,.2); cursor: pointer; color: var(--ink3); transition: all .15s; }
+.btn-icon:hover { background: rgba(255,71,87,.1); color: var(--danger); border-color: var(--danger); }
+
+/* ── TABLES ────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table       { width: 100%; border-collapse: collapse; font-size: 13px; }
+th          { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--accent); padding: 10px 12px; border-bottom: 1px solid rgba(0,170,255,.2); white-space: nowrap; }
+td          { padding: 11px 12px; border-bottom: 1px solid rgba(0,170,255,.07); color: var(--ink2); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(0,170,255,.05); }
+.profit-pos  { color: var(--success); font-weight: 700; text-shadow: 0 0 8px rgba(0,229,160,.2); }
+.profit-neg  { color: var(--danger);  font-weight: 700; text-shadow: 0 0 8px rgba(255,71,87,.2); }
+
+/* ── BADGES ────────────────────────────────────────────────── */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.badge-blue   { background: rgba(0,170,255,.12);  color: var(--accent);  border: 1px solid rgba(0,170,255,.2); }
+.badge-green  { background: rgba(0,229,160,.1);   color: var(--success); border: 1px solid rgba(0,229,160,.2); }
+.badge-amber  { background: rgba(255,179,0,.1);   color: var(--warning); border: 1px solid rgba(255,179,0,.2); }
+.badge-red    { background: rgba(255,71,87,.1);   color: var(--danger);  border: 1px solid rgba(255,71,87,.2); }
+
+/* ── TABS ──────────────────────────────────────────────────── */
+.tabs      { display: flex; gap: 4px; border-bottom: 1px solid rgba(0,170,255,.15); margin-bottom: 20px; }
+.tab       { padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--ink3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .2s; }
+.tab:hover { color: var(--ink); }
+.tab.active{ color: var(--accent); border-bottom-color: var(--accent); text-shadow: 0 0 10px rgba(0,170,255,.3); }
+
+/* ── SECTION HEADER ────────────────────────────────────────── */
+.section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.section-hdr h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--ink); }
+.section-hdr p  { font-size: 13px; color: var(--ink3); margin-top: 2px; }
+
+/* ── LOADING / EMPTY ────────────────────────────────────────── */
+.loading { display: flex; align-items: center; justify-content: center; padding: 48px; color: var(--ink3); gap: 10px; }
+.empty   { text-align: center; padding: 48px; color: var(--ink3); }
+.empty .big { font-size: 40px; margin-bottom: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 20px; height: 20px; border: 2px solid rgba(0,170,255,.15); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; box-shadow: 0 0 8px rgba(0,170,255,.2); }
+
+/* ── MODAL ─────────────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.modal { background: var(--paper3); border: 1px solid rgba(0,170,255,.2); border-radius: var(--r2); padding: 28px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(0,170,255,.08); }
+.modal h3 { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* ── TOAST ─────────────────────────────────────────────────── */
+#toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--paper); padding: 12px 20px; border-radius: var(--r); font-size: 13px; font-weight: 600; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all .25s; max-width: 320px; }
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.success { background: var(--success); }
+#toast.error   { background: var(--danger); }
+
+/* ── MISC ──────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.text-right { text-align: right; }
+.total-row td { font-weight: 800; color: var(--ink) !important; border-top: 1px solid rgba(0,170,255,.25); background: rgba(0,170,255,.07) !important; }
+.chart-container { position: relative; height: 260px; }
+.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; background: #0a0e1a; border: 1px solid rgba(0,170,255,.12); padding: 14px; border-radius: var(--r); margin-bottom: 20px; }
+.filter-bar .form-group { min-width: 140px; }
+.mb-0 { margin-bottom: 0 !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ── SIDEBAR ── -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <h1>VexelTech</h1>
+      <span>Management System</span>
+    </div>
+
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon">◈</span> Dashboard</div>
+
+    <div class="nav-section">Operations</div>
+    <div class="nav-item" data-page="projects"><span class="icon">⬡</span> Projects</div>
+    <div class="nav-item" data-page="inventory"><span class="icon">▦</span> Inventory</div>
+    <div class="nav-item" data-page="suppliers"><span class="icon">⬢</span> Suppliers</div>
+
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" data-page="expenses"><span class="icon">◎</span> Expenses</div>
+    <div class="nav-item" data-page="accounts"><span class="icon">◉</span> Accounts</div>
+
+    <div class="nav-section">Intelligence</div>
+    <div class="nav-item" data-page="reports"><span class="icon">◫</span> Reports</div>
+    <div class="nav-item" data-page="brands"><span class="icon">◑</span> Brand Analysis</div>
+
+    <div class="sidebar-bottom">VexelTech v1.0</div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <div id="main">
+    <div id="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div id="topbar-actions"></div>
+    </div>
+    <div id="content">
+      <div id="page-root"></div>
+    </div>
+  </div>
+</div>
+
+<!-- VexelTech Build: 1775808355 -->
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CONFIGURATION — paste your deployed Apps Script URL here
+   ════════════════════════════════════════════════════════════ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzLTX4TMv_ZrXXNAdK0d5ZvPId_yY-HCPcwXE9IlBAM/dev'; // Leave empty until you connect Apps Script
+
+/* ════════════════════════════════════════════════════════════
+   DEMO MODE — set to false when connected to real backend
+   ════════════════════════════════════════════════════════════ */
+const DEMO_MODE = false;
+
+/* ════════════════════════════════════════════════════════════
+   IN-MEMORY DEMO STORE
+   ════════════════════════════════════════════════════════════ */
+const store = {
+  suppliers: [
+    { ID:'SUP_001', Name:'Alpha Tech Supply', CreatedAt:'2024-01-10' },
+    { ID:'SUP_002', Name:'Beta Components Ltd', CreatedAt:'2024-02-05' },
+    { ID:'SUP_003', Name:'Gamma Electronics', CreatedAt:'2024-03-01' },
+  ],
+  projects: [
+    { name:'Project Alpha' },
+    { name:'Project Beta' },
+  ],
+  items: {
+    'Project Alpha': [
+      { ItemName:'Laptop X1',  Brand:'Dell',   SupplierID:'SUP_001', SupplierName:'Alpha Tech Supply',   Qty:5,  CostPrice:800,  SellingPrice:1100, Profit:1500, Date:'2024-04-01' },
+      { ItemName:'Monitor 27', Brand:'LG',     SupplierID:'SUP_002', SupplierName:'Beta Components Ltd', Qty:10, CostPrice:200,  SellingPrice:310,  Profit:1100, Date:'2024-04-03' },
+      { ItemName:'Keyboard K8',Brand:'Logitech',SupplierID:'SUP_001',SupplierName:'Alpha Tech Supply',   Qty:20, CostPrice:40,   SellingPrice:70,   Profit:600,  Date:'2024-04-05' },
+    ],
+    'Project Beta': [
+      { ItemName:'SSD 1TB',    Brand:'Samsung',SupplierID:'SUP_003', SupplierName:'Gamma Electronics',   Qty:15, CostPrice:90,   SellingPrice:140,  Profit:750,  Date:'2024-05-01' },
+      { ItemName:'RAM 16GB',   Brand:'Kingston',SupplierID:'SUP_002',SupplierName:'Beta Components Ltd', Qty:30, CostPrice:55,   SellingPrice:85,   Profit:900,  Date:'2024-05-04' },
+    ],
+  },
+  expenses: [
+    { ID:'EXP_001', ProjectName:'Project Alpha', ExpenseName:'Shipping',     Amount:120, Date:'2024-04-02' },
+    { ID:'EXP_002', ProjectName:'Global',        ExpenseName:'Office Rent',  Amount:500, Date:'2024-04-01' },
+    { ID:'EXP_003', ProjectName:'Project Beta',  ExpenseName:'Packaging',    Amount:80,  Date:'2024-05-02' },
+  ],
+  payments: [
+    { ID:'PAY_001', SupplierID:'SUP_001', SupplierName:'Alpha Tech Supply',   Amount:3000, Date:'2024-04-10', ReceiptURL:'', Notes:'Partial payment' },
+    { ID:'PAY_002', SupplierID:'SUP_002', SupplierName:'Beta Components Ltd', Amount:1500, Date:'2024-04-15', ReceiptURL:'', Notes:'' },
+  ],
+};
+
+/* ════════════════════════════════════════════════════════════
+   API LAYER
+   ════════════════════════════════════════════════════════════ */
+async function api(method, action, body = {}) {
+  // Always use DEMO store when DEMO_MODE is on — never touches network
+  if (DEMO_MODE) {
+    try {
+      return Promise.resolve(demoApi(method, action, body));
+    } catch(demoErr) {
+      toast('خطأ في البيانات: ' + demoErr.message, 'error');
+      throw demoErr;
+    }
+  }
+  if (!API_URL) {
+    toast('API URL غير مضبوط — شغّل DEMO_MODE أو أضف API_URL', 'error');
+    throw new Error('No API URL');
+  }
+  try {
+    // ── All requests go as GET to avoid CORS preflight ──────
+    // Write ops encode their payload in the "body" query param
+    let url = API_URL + '?action=' + encodeURIComponent(action);
+
+    if (method === 'POST' && Object.keys(body).length) {
+      url += '&body=' + encodeURIComponent(JSON.stringify(body));
+    } else {
+      Object.entries(body).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(v);
+        }
+      });
+    }
+
+    const res  = await fetch(url, { method: 'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'API error');
+    return json.data;
+  } catch (err) {
+    toast('خطأ: ' + err.message, 'error');
+    throw err;
+  }
+}
+
+/* Demo API — mirrors all backend functions in-browser */
+function demoApi(method, action, body = {}) {
+  const id = () => 'ID_' + Date.now() + '_' + Math.random().toString(36).slice(2,6).toUpperCase();
+  const today = () => new Date().toISOString().split('T')[0];
+
+  switch(action) {
+    case 'getSuppliers':     return store.suppliers.slice();
+    case 'getProjects':      return store.projects.slice();
+    case 'getProjectItems':  return (store.items[(body||{}).project] || []).slice();
+    case 'getExpenses': {
+      const p = (body||{}).project;
+      if (p && p !== 'all') return store.expenses.filter(e => e.ProjectName === p || e.ProjectName === 'Global');
+      return store.expenses.slice();
+    }
+    case 'getPayments': {
+      const s = (body||{}).supplierId;
+      if (s && s !== 'all') return store.payments.filter(p => p.SupplierID === s);
+      return store.payments.slice();
+    }
+    case 'getDashboard':     return computeDashboard();
+    case 'getReport':        return computeReport(body);
+    case 'getBrandAnalysis': return computeBrands(body);
+
+    case 'addSupplier': {
+      const sup = { ID: id(), Name: body.name, CreatedAt: today() };
+      store.suppliers.push(sup); return sup;
+    }
+    case 'deleteSupplier':
+      store.suppliers = store.suppliers.filter(s => s.ID !== body.id); return {};
+
+    case 'createProject': {
+      if (store.projects.find(p => p.name === body.name)) throw new Error('Project already exists');
+      store.projects.push({ name: body.name });
+      store.items[body.name] = [];
+      return { name: body.name };
+    }
+    case 'deleteProject':
+      store.projects = store.projects.filter(p => p.name !== body.name);
+      delete store.items[body.name];
+      return {};
+
+    case 'addProjectItem': {
+      const qty=+body.qty||0, cost=+body.costPrice||0, sell=+body.sellingPrice||0;
+      const item = {
+        ItemName: body.itemName, Brand: body.brand,
+        SupplierID: body.supplierId, SupplierName: body.supplierName,
+        Qty: qty, CostPrice: cost, SellingPrice: sell,
+        Profit: (sell - cost) * qty,
+        Date: body.date || today()
+      };
+      if (!store.items[body.project]) store.items[body.project] = [];
+      store.items[body.project].push(item);
+      return { profit: item.Profit };
+    }
+    case 'deleteProjectItem':
+      store.items[body.project].splice(+body.rowIndex, 1); return {};
+
+    case 'addExpense': {
+      const exp = { ID: id(), ProjectName: body.projectName||'Global', ExpenseName: body.expenseName, Amount: +body.amount||0, Date: body.date||today() };
+      store.expenses.push(exp); return exp;
+    }
+    case 'deleteExpense':
+      store.expenses = store.expenses.filter(e => e.ID !== body.id); return {};
+
+    case 'addPayment': {
+      const pay = { ID: id(), SupplierID: body.supplierId, SupplierName: body.supplierName, Amount: +body.amount||0, Date: body.date||today(), ReceiptURL: body.receiptUrl||'', Notes: body.notes||'' };
+      store.payments.push(pay); return pay;
+    }
+    case 'deletePayment':
+      store.payments = store.payments.filter(p => p.ID !== body.id); return {};
+
+    default: throw new Error('Unknown demo action: ' + action);
+  }
+}
+
+function computeDashboard() {
+  let totalSales=0, totalCost=0, totalProfit=0;
+  const brandMap={}, projectProfits=[];
+  store.projects.forEach(p => {
+    let pP=0;
+    (store.items[p.name]||[]).forEach(i => {
+      const qty=+i.Qty||0, cost=+i.CostPrice||0, sell=+i.SellingPrice||0, prof=+i.Profit||0;
+      totalSales += sell*qty; totalCost += cost*qty; totalProfit += prof; pP += prof;
+      brandMap[i.Brand||'Unknown'] = (brandMap[i.Brand||'Unknown']||0) + cost*qty;
+    });
+    projectProfits.push({ name: p.name, profit: pP });
+  });
+  const totalExpenses = store.expenses.reduce((s,e) => s+(+e.Amount||0), 0);
+  const purchaseMap={}, paymentMap={};
+  store.projects.forEach(p => {
+    (store.items[p.name]||[]).forEach(i => {
+      const sid=i.SupplierID||'Unknown';
+      purchaseMap[sid]=(purchaseMap[sid]||0)+(+i.CostPrice||0)*(+i.Qty||0);
+    });
+  });
+  store.payments.forEach(p => { paymentMap[p.SupplierID]=(paymentMap[p.SupplierID]||0)+(+p.Amount||0); });
+  let totalLiabilities=0;
+  store.suppliers.forEach(s => { totalLiabilities += Math.max(0,(purchaseMap[s.ID]||0)-(paymentMap[s.ID]||0)); });
+  return { totalSales, totalCost, totalProfit, totalExpenses, netProfit: totalProfit-totalExpenses, totalLiabilities, brandData: brandMap, projectProfits };
+}
+
+function computeReport(params) {
+  const { startDate, endDate, project, supplier, brand } = params;
+  let rows=[], totalSales=0, totalCost=0, totalProfit=0;
+  const projects = project && project !== 'all' ? [{ name: project }] : store.projects;
+  projects.forEach(p => {
+    (store.items[p.name]||[]).forEach(i => {
+      if (startDate && i.Date < startDate) return;
+      if (endDate   && i.Date > endDate)   return;
+      if (supplier && supplier !== 'all' && i.SupplierID !== supplier) return;
+      if (brand    && brand    !== 'all' && i.Brand      !== brand)    return;
+      const qty=+i.Qty||0, cost=+i.CostPrice||0, sell=+i.SellingPrice||0, prof=+i.Profit||0;
+      totalSales += sell*qty; totalCost += cost*qty; totalProfit += prof;
+      rows.push({ ...i, project: p.name });
+    });
+  });
+  const filteredExpenses = store.expenses.filter(e => {
+    if (startDate && e.Date < startDate) return false;
+    if (endDate   && e.Date > endDate)   return false;
+    return true;
+  });
+  const totalExpenses = filteredExpenses.reduce((s,e) => s+(+e.Amount||0), 0);
+  return { rows, totalSales, totalCost, totalProfit, totalExpenses, netProfit: totalProfit-totalExpenses, expenseRows: filteredExpenses };
+}
+
+function computeBrands(params) {
+  const { startDate, endDate, project } = params;
+  const brandMap={};
+  const projects = project && project !== 'all' ? [{ name: project }] : store.projects;
+  projects.forEach(p => {
+    (store.items[p.name]||[]).forEach(i => {
+      if (startDate && i.Date < startDate) return;
+      if (endDate   && i.Date > endDate)   return;
+      const b=i.Brand||'Unknown', cost=(+i.CostPrice||0)*(+i.Qty||0);
+      if (!brandMap[b]) brandMap[b]={ brand:b, totalPurchase:0, items:[] };
+      brandMap[b].totalPurchase += cost;
+      brandMap[b].items.push({ ...i, project: p.name });
+    });
+  });
+  const grandTotal=Object.values(brandMap).reduce((s,b) => s+b.totalPurchase, 0);
+  const brands=Object.values(brandMap).map(b => ({ ...b, percentage: grandTotal>0 ? (b.totalPurchase/grandTotal*100).toFixed(1) : '0.0' })).sort((a,b) => b.totalPurchase-a.totalPurchase);
+  return { brands, grandTotal };
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOAST
+   ════════════════════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3200);
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODAL HELPER
+   ════════════════════════════════════════════════════════════ */
+function showModal(title, bodyHtml, onConfirm, confirmText='Save', confirmClass='btn-primary') {
+  const existing = document.querySelector('.modal-overlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>${title}</h3>
+      ${bodyHtml}
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn ${confirmClass}" id="modal-confirm">${confirmText}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+  overlay.querySelector('#modal-confirm').onclick = async () => {
+    await onConfirm(overlay);
+    overlay.remove();
+  };
+}
+
+/* ════════════════════════════════════════════════════════════
+   FORMATTERS
+   ════════════════════════════════════════════════════════════ */
+const fmt = n => (+n||0).toLocaleString('ar-IQ', { minimumFractionDigits:0, maximumFractionDigits:0 }) + ' IQD';
+const fmtNum = n => (+n||0).toLocaleString();
+
+/* ════════════════════════════════════════════════════════════
+   ROUTER
+   ════════════════════════════════════════════════════════════ */
+let currentPage = 'dashboard';
+let chartInstances = [];
+
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  const titles = { dashboard:'Dashboard', projects:'Projects', inventory:'Inventory', suppliers:'Suppliers', expenses:'Expenses', accounts:'Accounts', reports:'Reports', brands:'Brand Analysis' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  document.getElementById('topbar-actions').innerHTML = '';
+  // destroy old charts
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+  renderPage(page);
+}
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navigate(el.dataset.page));
+});
+
+async function renderPage(page) {
+  const root = document.getElementById('page-root');
+  root.innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    switch(page) {
+      case 'dashboard':  await renderDashboard(root);  break;
+      case 'projects':   await renderProjects(root);   break;
+      case 'inventory':  await renderInventory(root);  break;
+      case 'suppliers':  await renderSuppliers(root);  break;
+      case 'expenses':   await renderExpenses(root);   break;
+      case 'accounts':   await renderAccounts(root);   break;
+      case 'reports':    await renderReports(root);    break;
+      case 'brands':     await renderBrands(root);     break;
+      default: root.innerHTML = '<p>Page not found.</p>';
+    }
+  } catch(e) { root.innerHTML = `<p style="color:var(--danger)">Error: ${e.message}</p>`; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: DASHBOARD
+   ════════════════════════════════════════════════════════════ */
+async function renderDashboard(root) {
+  const data = await api('GET','getDashboard');
+  root.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Sales</div>
+        <div class="stat-value stat-accent">${fmt(data.totalSales)}</div>
+        <div class="stat-sub">Revenue from all projects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Gross Profit</div>
+        <div class="stat-value stat-green">${fmt(data.totalProfit)}</div>
+        <div class="stat-sub">Before expenses</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value stat-amber">${fmt(data.totalExpenses)}</div>
+        <div class="stat-sub">All recorded expenses</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Net Profit</div>
+        <div class="stat-value ${data.netProfit>=0?'stat-green':'stat-red'}">${fmt(data.netProfit)}</div>
+        <div class="stat-sub">After expenses</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Liabilities</div>
+        <div class="stat-value stat-red">${fmt(data.totalLiabilities)}</div>
+        <div class="stat-sub">Owed to suppliers</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Brand Purchases</div><div class="card-sub">Cost breakdown by brand</div></div></div>
+        <div class="chart-container"><canvas id="brandChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Profit by Project</div><div class="card-sub">Gross profit comparison</div></div></div>
+        <div class="chart-container"><canvas id="projectChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Financial Summary</div></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Metric</th><th class="text-right">Value</th></tr></thead>
+        <tbody>
+          <tr><td>Total Sales</td><td class="text-right">${fmt(data.totalSales)}</td></tr>
+          <tr><td>Total Cost of Goods</td><td class="text-right">${fmt(data.totalCost)}</td></tr>
+          <tr><td>Gross Profit</td><td class="text-right" style="color:var(--success);font-weight:700">${fmt(data.totalProfit)}</td></tr>
+          <tr><td>Total Expenses</td><td class="text-right" style="color:var(--warning);font-weight:700">−${fmt(data.totalExpenses)}</td></tr>
+          <tr class="total-row"><td>Net Profit</td><td class="text-right" style="color:${data.netProfit>=0?'var(--success)':'var(--danger)'}">${fmt(data.netProfit)}</td></tr>
+        </tbody>
+      </table></div>
+    </div>`;
+
+  // Brand pie chart
+  const brandLabels = Object.keys(data.brandData);
+  const brandVals   = Object.values(data.brandData);
+  const bCtx = document.getElementById('brandChart').getContext('2d');
+  chartInstances.push(new Chart(bCtx, {
+    type: 'doughnut',
+    data: {
+      labels: brandLabels,
+      datasets: [{ data: brandVals, backgroundColor: ['#00aaff','#00e5a0','#ffb300','#ff4757','#bf5af2','#00d4ff'], borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{family:'Syne',size:12}, boxWidth:12 } } } }
+  }));
+
+  // Project bar chart
+  const pCtx = document.getElementById('projectChart').getContext('2d');
+  chartInstances.push(new Chart(pCtx, {
+    type: 'bar',
+    data: {
+      labels: data.projectProfits.map(p => p.name),
+      datasets: [{ label:'Profit', data: data.projectProfits.map(p => p.profit), backgroundColor:'rgba(0,170,255,.8)', borderRadius:6, borderSkipped:false }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ callback:v=>v.toLocaleString('ar-IQ')+' IQD' } } } }
+  }));
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: PROJECTS
+   ════════════════════════════════════════════════════════════ */
+async function renderProjects(root) {
+  const projects = await api('GET','getProjects');
+  root.innerHTML = `
+    <div class="section-hdr">
+      <div><h2>Projects</h2><p>Manage all company projects</p></div>
+      <button class="btn btn-primary" id="btn-new-project">+ New Project</button>
+    </div>
+    <div class="grid-3" id="projects-grid"></div>`;
+
+  document.getElementById('btn-new-project').onclick = () => {
+    showModal('Create New Project', `
+      <div class="form-group"><label>Project Name</label><input type="text" id="m-proj-name" placeholder="e.g. Project Gamma"/></div>`,
+      async (ov) => {
+        const name = ov.querySelector('#m-proj-name').value.trim();
+        if (!name) { toast('Project name required','error'); return; }
+        await api('POST','createProject',{ name });
+        toast('Project created!','success');
+        renderPage('projects');
+      });
+  };
+
+  const grid = document.getElementById('projects-grid');
+  if (!projects.length) {
+    grid.innerHTML = '<div class="empty"><div class="big">⬡</div><p>No projects yet. Create one to get started.</p></div>';
+    return;
+  }
+
+  // Load profit for each project
+  for (const p of projects) {
+    const items = await api('GET','getProjectItems',{ project: p.name });
+    const profit = items.reduce((s,i) => s+(+i.Profit||0), 0);
+    const itemCount = items.length;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div style="font-size:22px;font-weight:800">${p.name}</div>
+        <button class="btn-icon btn-delete-proj" data-name="${p.name}" title="Delete project">✕</button>
+      </div>
+      <div style="color:var(--success);font-size:20px;font-weight:800;margin-bottom:4px">${fmt(profit)}</div>
+      <div style="font-size:12px;color:var(--ink3)">${itemCount} item${itemCount!==1?'s':''} · Gross profit</div>
+      <hr class="divider"/>
+      <div style="font-size:12px;color:var(--accent);font-weight:600">View Inventory →</div>`;
+
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('btn-delete-proj')) return;
+      sessionStorage.setItem('activeProject', p.name);
+      navigate('inventory');
+    });
+    card.querySelector('.btn-delete-proj').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Delete project "${p.name}"? This cannot be undone.`)) return;
+      await api('POST','deleteProject',{ name: p.name });
+      toast('Project deleted','success');
+      renderPage('projects');
+    });
+    grid.appendChild(card);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: INVENTORY (Project Items)
+   ════════════════════════════════════════════════════════════ */
+async function renderInventory(root) {
+  const [projects, suppliers] = await Promise.all([api('GET','getProjects'), api('GET','getSuppliers')]);
+
+  const activeProject = sessionStorage.getItem('activeProject') || (projects[0] && projects[0].name) || '';
+
+  root.innerHTML = `
+    <div class="section-hdr">
+      <div><h2>Inventory</h2><p>Items across all projects</p></div>
+      <button class="btn btn-primary" id="btn-add-item" ${!activeProject?'disabled':''}>+ Add Item</button>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom:20px">
+      <div class="form-group">
+        <label>Project</label>
+        <select id="inv-project-filter">
+          ${projects.map(p => `<option value="${p.name}" ${p.name===activeProject?'selected':''}>${p.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div id="inv-table-wrap"></div>`;
+
+  const loadItems = async () => {
+    const project = document.getElementById('inv-project-filter').value;
+    sessionStorage.setItem('activeProject', project);
+    const items = await api('GET','getProjectItems',{ project });
+    const wrap = document.getElementById('inv-table-wrap');
+
+    if (!items.length) {
+      wrap.innerHTML = '<div class="empty"><div class="big">▦</div><p>No items in this project yet.</p></div>';
+      return;
+    }
+
+    const totalProfit = items.reduce((s,i) => s+(+i.Profit||0), 0);
+    const totalSales  = items.reduce((s,i) => s+(+i.SellingPrice||0)*(+i.Qty||0), 0);
+    const totalCost   = items.reduce((s,i) => s+(+i.CostPrice||0)*(+i.Qty||0), 0);
+
+    wrap.innerHTML = `
+      <div class="card">
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Item Name</th><th>Brand</th><th>Supplier</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Profit</th><th>Date</th><th></th></tr></thead>
+          <tbody>
+            ${items.map((i,idx) => `
+              <tr>
+                <td>${idx+1}</td>
+                <td style="font-weight:600;color:var(--ink)">${i.ItemName}</td>
+                <td><span class="badge badge-blue">${i.Brand||'—'}</span></td>
+                <td>${i.SupplierName||'—'}</td>
+                <td>${fmtNum(i.Qty)}</td>
+                <td>${fmt(i.CostPrice)}</td>
+                <td>${fmt(i.SellingPrice)}</td>
+                <td class="${+i.Profit>=0?'profit-pos':'profit-neg'}">${fmt(i.Profit)}</td>
+                <td>${i.Date||''}</td>
+                <td><button class="btn-icon btn-del-item" data-idx="${idx}" data-project="${project}" title="Delete">✕</button></td>
+              </tr>`).join('')}
+            <tr class="total-row">
+              <td colspan="4">TOTAL</td>
+              <td></td>
+              <td>${fmt(totalCost)}</td>
+              <td>${fmt(totalSales)}</td>
+              <td class="profit-pos">${fmt(totalProfit)}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tbody>
+        </table></div>
+      </div>`;
+
+    wrap.querySelectorAll('.btn-del-item').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Delete this item?')) return;
+        await api('POST','deleteProjectItem',{ project: btn.dataset.project, rowIndex: btn.dataset.idx });
+        toast('Item deleted','success');
+        loadItems();
+      };
+    });
+  };
+
+  document.getElementById('inv-project-filter').onchange = loadItems;
+  await loadItems();
+
+  document.getElementById('btn-add-item').onclick = () => {
+    const project = document.getElementById('inv-project-filter').value;
+    const supplierOptions = suppliers.map(s => `<option value="${s.ID}" data-name="${s.Name}">${s.Name}</option>`).join('');
+    showModal('Add Inventory Item',`
+      <div class="form-row">
+        <div class="form-group"><label>Item Name</label><input type="text" id="m-item-name" placeholder="e.g. Laptop Pro"/></div>
+        <div class="form-group"><label>Brand</label><input type="text" id="m-brand" list="brand-list" placeholder="e.g. Dell"/>
+          <datalist id="brand-list"><option value="Dell"/><option value="HP"/><option value="LG"/><option value="Samsung"/><option value="Apple"/><option value="Logitech"/><option value="Kingston"/></datalist>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Supplier</label>
+          <select id="m-supplier">${supplierOptions}</select>
+        </div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="m-qty" value="1" min="1"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Cost Price ($)</label><input type="number" id="m-cost" step="0.01" placeholder="0.00"/></div>
+        <div class="form-group"><label>Selling Price ($)</label><input type="number" id="m-sell" step="0.01" placeholder="0.00"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}"/></div>
+        <div class="form-group" style="align-items:flex-end">
+          <div style="font-size:12px;color:var(--ink3)">Profit preview</div>
+          <div id="profit-preview" style="font-size:18px;font-weight:800;color:var(--success)">$0.00</div>
+        </div>
+      </div>`,
+      async (ov) => {
+        const selEl = ov.querySelector('#m-supplier');
+        const supplierOpt = selEl.options[selEl.selectedIndex];
+        const itemName = ov.querySelector('#m-item-name').value.trim();
+        if (!itemName) { toast('Item name required','error'); return; }
+        const qty  = +ov.querySelector('#m-qty').value  || 0;
+        const cost = +ov.querySelector('#m-cost').value || 0;
+        const sell = +ov.querySelector('#m-sell').value || 0;
+        await api('POST','addProjectItem',{
+          project, itemName,
+          brand: ov.querySelector('#m-brand').value,
+          supplierId: selEl.value,
+          supplierName: supplierOpt.dataset.name,
+          qty, costPrice: cost, sellingPrice: sell,
+          date: ov.querySelector('#m-date').value
+        });
+        toast(`Item added — Profit: ${fmt((sell-cost)*qty)}`,'success');
+        loadItems();
+      });
+
+    // Live profit preview
+    const calc = () => {
+      const qty  = +document.getElementById('m-qty')?.value  || 0;
+      const cost = +document.getElementById('m-cost')?.value || 0;
+      const sell = +document.getElementById('m-sell')?.value || 0;
+      const prev = document.getElementById('profit-preview');
+      if (prev) { const p = (sell-cost)*qty; prev.textContent = fmt(p); prev.style.color = p>=0?'var(--success)':'var(--danger)'; }
+    };
+    ['m-qty','m-cost','m-sell'].forEach(id => {
+      setTimeout(() => document.getElementById(id)?.addEventListener('input', calc), 100);
+    });
+  };
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: SUPPLIERS
+   ════════════════════════════════════════════════════════════ */
+async function renderSuppliers(root) {
+  const suppliers = await api('GET','getSuppliers');
+  root.innerHTML = `
+    <div class="section-hdr">
+      <div><h2>Suppliers</h2><p>Manage vendor / office directory</p></div>
+      <button class="btn btn-primary" id="btn-add-sup">+ Add Supplier</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Supplier Name</th><th>Added On</th><th></th></tr></thead>
+        <tbody id="sup-tbody">
+          ${!suppliers.length ? '<tr><td colspan="4" class="empty">No suppliers yet.</td></tr>' :
+          suppliers.map(s => `
+            <tr>
+              <td><span class="badge badge-blue" style="font-family:var(--mono)">${s.ID}</span></td>
+              <td style="font-weight:600;color:var(--ink)">${s.Name}</td>
+              <td>${s.CreatedAt||'—'}</td>
+              <td><button class="btn-icon" onclick="delSupplier('${s.ID}')">✕</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+
+  document.getElementById('btn-add-sup').onclick = () => {
+    showModal('Add Supplier',`
+      <div class="form-group"><label>Supplier / Office Name</label><input type="text" id="m-sup-name" placeholder="e.g. Delta Electronics"/></div>`,
+      async (ov) => {
+        const name = ov.querySelector('#m-sup-name').value.trim();
+        if (!name) { toast('Supplier name required','error'); return; }
+        await api('POST','addSupplier',{ name });
+        toast('Supplier added!','success');
+        renderPage('suppliers');
+      });
+  };
+}
+window.delSupplier = async (id) => {
+  if (!confirm('Delete this supplier?')) return;
+  await api('POST','deleteSupplier',{ id });
+  toast('Supplier removed','success');
+  renderPage('suppliers');
+};
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: EXPENSES
+   ════════════════════════════════════════════════════════════ */
+async function renderExpenses(root) {
+  const [projects, expenses] = await Promise.all([api('GET','getProjects'), api('GET','getExpenses',{ project:'all' })]);
+  const total = expenses.reduce((s,e) => s+(+e.Amount||0), 0);
+
+  root.innerHTML = `
+    <div class="section-hdr">
+      <div><h2>Expenses</h2><p>Track all project and global expenses</p></div>
+      <button class="btn btn-primary" id="btn-add-exp">+ Add Expense</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value stat-amber">${fmt(total)}</div></div>
+      <div class="stat-card"><div class="stat-label">Records</div><div class="stat-value">${expenses.length}</div></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Project</th><th>Expense</th><th>Amount</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          ${!expenses.length ? '<tr><td colspan="6" class="empty">No expenses recorded.</td></tr>' :
+          expenses.map(e => `
+            <tr>
+              <td><span class="badge badge-blue" style="font-family:var(--mono);font-size:10px">${e.ID}</span></td>
+              <td><span class="badge ${e.ProjectName==='Global'?'badge-amber':'badge-green'}">${e.ProjectName}</span></td>
+              <td style="font-weight:600;color:var(--ink)">${e.ExpenseName}</td>
+              <td style="color:var(--warning);font-weight:700">${fmt(e.Amount)}</td>
+              <td>${e.Date||'—'}</td>
+              <td><button class="btn-icon" onclick="delExpense('${e.ID}')">✕</button></td>
+            </tr>`).join('')}
+          <tr class="total-row"><td colspan="3">TOTAL</td><td>${fmt(total)}</td><td colspan="2"></td></tr>
+        </tbody>
+      </table></div>
+    </div>`;
+
+  document.getElementById('btn-add-exp').onclick = () => {
+    const projOptions = `<option value="Global">Global (All Projects)</option>` + projects.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+    showModal('Add Expense',`
+      <div class="form-row">
+        <div class="form-group"><label>Project</label><select id="m-exp-proj">${projOptions}</select></div>
+        <div class="form-group"><label>Expense Name</label><input type="text" id="m-exp-name" placeholder="e.g. Shipping fees"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Amount ($)</label><input type="number" id="m-exp-amt" step="0.01" placeholder="0.00"/></div>
+        <div class="form-group"><label>Date</label><input type="date" id="m-exp-date" value="${new Date().toISOString().split('T')[0]}"/></div>
+      </div>`,
+      async (ov) => {
+        const name = ov.querySelector('#m-exp-name').value.trim();
+        if (!name) { toast('Expense name required','error'); return; }
+        await api('POST','addExpense',{
+          projectName: ov.querySelector('#m-exp-proj').value,
+          expenseName: name,
+          amount: ov.querySelector('#m-exp-amt').value,
+          date: ov.querySelector('#m-exp-date').value
+        });
+        toast('Expense added!','success');
+        renderPage('expenses');
+      });
+  };
+}
+window.delExpense = async (id) => {
+  if (!confirm('Delete this expense?')) return;
+  await api('POST','deleteExpense',{ id });
+  toast('Expense deleted','success');
+  renderPage('expenses');
+};
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: ACCOUNTS
+   ════════════════════════════════════════════════════════════ */
+async function renderAccounts(root) {
+  const [suppliers, allPayments] = await Promise.all([api('GET','getSuppliers'), api('GET','getPayments',{ supplierId:'all' })]);
+  // Compute purchase per supplier from demo store
+  const purchaseMap = {};
+  if (DEMO_MODE) {
+    store.projects.forEach(p => {
+      (store.items[p.name]||[]).forEach(i => {
+        purchaseMap[i.SupplierID] = (purchaseMap[i.SupplierID]||0) + (+i.CostPrice||0)*(+i.Qty||0);
+      });
+    });
+  }
+  const paymentMap = {};
+  allPayments.forEach(p => { paymentMap[p.SupplierID] = (paymentMap[p.SupplierID]||0) + (+p.Amount||0); });
+  const totalLiabilities = suppliers.reduce((s,sup) => s + Math.max(0,(purchaseMap[sup.ID]||0)-(paymentMap[sup.ID]||0)), 0);
+
+  root.innerHTML = `
+    <div class="section-hdr">
+      <div><h2>Accounts</h2><p>Supplier payment tracking & liabilities</p></div>
+      <button class="btn btn-primary" id="btn-add-payment">+ Add Payment</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Liabilities</div><div class="stat-value stat-red">${fmt(totalLiabilities)}</div><div class="stat-sub">Across all suppliers</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title" style="margin-bottom:16px">Supplier Balances</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Supplier</th><th>Total Purchases</th><th>Total Paid</th><th>Balance</th><th>Status</th></tr></thead>
+        <tbody>
+          ${suppliers.map(s => {
+            const purchases = purchaseMap[s.ID]||0;
+            const paid      = paymentMap[s.ID] ||0;
+            const balance   = purchases - paid;
+            return `<tr>
+              <td style="font-weight:600;color:var(--ink)">${s.Name}</td>
+              <td>${fmt(purchases)}</td>
+              <td style="color:var(--success)">${fmt(paid)}</td>
+              <td class="${balance>0?'profit-neg':'profit-pos'}">${fmt(balance)}</td>
+              <td><span class="badge ${balance<=0?'badge-green':balance<500?'badge-amber':'badge-red'}">${balance<=0?'Paid':'Owes'}</span></td>
+            </tr>`;
+          }).join('')}
+          <tr class="total-row"><td>TOTAL</td><td>${fmt(Object.values(purchaseMap).reduce((s,v)=>s+v,0))}</td><td>${fmt(Object.values(paymentMap).reduce((s,v)=>s+v,0))}</td><td class="profit-neg">${fmt(totalLiabilities)}</td><td></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Payment History</div>
+        <select id="acc-sup-filter" style="font-size:13px">
+          <option value="all">All Suppliers</option>
+          ${suppliers.map(s => `<option value="${s.ID}">${s.Name}</option>`).join('')}
+        </select>
+      </div>
+      <div id="payments-table"></div>
+    </div>`;
+
+  const renderPaymentsTable = async () => {
+    const supId = document.getElementById('acc-sup-filter').value;
+    const payments = await api('GET','getPayments',{ supplierId: supId });
+    const totalPaid = payments.reduce((s,p) => s+(+p.Amount||0), 0);
+    document.getElementById('payments-table').innerHTML = `
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Supplier</th><th>Amount</th><th>Date</th><th>Receipt</th><th>Notes</th><th></th></tr></thead>
+        <tbody>
+          ${!payments.length ? '<tr><td colspan="7" class="empty">No payments found.</td></tr>' :
+          payments.map(p => `<tr>
+            <td><span class="badge badge-blue" style="font-family:var(--mono);font-size:10px">${p.ID}</span></td>
+            <td style="font-weight:600;color:var(--ink)">${p.SupplierName}</td>
+            <td style="color:var(--success);font-weight:700">${fmt(p.Amount)}</td>
+            <td>${p.Date||'—'}</td>
+            <td>${p.ReceiptURL ? `<a href="${p.ReceiptURL}" target="_blank" style="color:var(--accent)">View</a>` : '—'}</td>
+            <td>${p.Notes||'—'}</td>
+            <td><button class="btn-icon" onclick="delPayment('${p.ID}')">✕</button></td>
+          </tr>`).join('')}
+          <tr class="total-row"><td colspan="2">TOTAL PAID</td><td style="color:var(--success)">${fmt(totalPaid)}</td><td colspan="4"></td></tr>
+        </tbody>
+      </table></div>`;
+  };
+
+  document.getElementById('acc-sup-filter').onchange = renderPaymentsTable;
+  await renderPaymentsTable();
+
+  document.getElementById('btn-add-payment').onclick = () => {
+    const supOptions = suppliers.map(s => `<option value="${s.ID}" data-name="${s.Name}">${s.Name}</option>`).join('');
+    showModal('Record Payment',`
+      <div class="form-row">
+        <div class="form-group"><label>Supplier</label><select id="m-pay-sup">${supOptions}</select></div>
+        <div class="form-group"><label>Amount ($)</label><input type="number" id="m-pay-amt" step="0.01" placeholder="0.00"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="m-pay-date" value="${new Date().toISOString().split('T')[0]}"/></div>
+        <div class="form-group"><label>Receipt URL (optional)</label><input type="url" id="m-pay-receipt" placeholder="https://…"/></div>
+      </div>
+      <div class="form-group"><label>Notes</label><input type="text" id="m-pay-notes" placeholder="Optional notes"/></div>`,
+      async (ov) => {
+        const selEl = ov.querySelector('#m-pay-sup');
+        const opt   = selEl.options[selEl.selectedIndex];
+        await api('POST','addPayment',{
+          supplierId: selEl.value, supplierName: opt.dataset.name,
+          amount: ov.querySelector('#m-pay-amt').value,
+          date: ov.querySelector('#m-pay-date').value,
+          receiptUrl: ov.querySelector('#m-pay-receipt').value,
+          notes: ov.querySelector('#m-pay-notes').value
+        });
+        toast('Payment recorded!','success');
+        renderPage('accounts');
+      });
+  };
+}
+window.delPayment = async (id) => {
+  if (!confirm('Delete this payment record?')) return;
+  await api('POST','deletePayment',{ id });
+  toast('Payment deleted','success');
+  renderPage('accounts');
+};
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: REPORTS
+   ════════════════════════════════════════════════════════════ */
+async function renderReports(root) {
+  const [projects, suppliers] = await Promise.all([api('GET','getProjects'), api('GET','getSuppliers')]);
+  const projOptions   = `<option value="all">All Projects</option>` + projects.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  const supOptions    = `<option value="all">All Suppliers</option>` + suppliers.map(s => `<option value="${s.ID}">${s.Name}</option>`).join('');
+  const today = new Date().toISOString().split('T')[0];
+  const firstDay = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
+
+  root.innerHTML = `
+    <div class="section-hdr"><div><h2>Reports</h2><p>Advanced profit & financial analysis</p></div></div>
+    <div class="filter-bar">
+      <div class="form-group"><label>From</label><input type="date" id="r-start" value="${firstDay}"/></div>
+      <div class="form-group"><label>To</label><input type="date" id="r-end" value="${today}"/></div>
+      <div class="form-group"><label>Project</label><select id="r-proj">${projOptions}</select></div>
+      <div class="form-group"><label>Supplier</label><select id="r-sup">${supOptions}</select></div>
+      <div class="form-group"><label>Brand</label><input type="text" id="r-brand" placeholder="All brands"/></div>
+      <div style="align-self:flex-end"><button class="btn btn-primary" id="r-run">Run Report</button></div>
+    </div>
+    <div id="report-results"></div>`;
+
+  const runReport = async () => {
+    const params = {
+      startDate: document.getElementById('r-start').value,
+      endDate:   document.getElementById('r-end').value,
+      project:   document.getElementById('r-proj').value,
+      supplier:  document.getElementById('r-sup').value,
+      brand:     document.getElementById('r-brand').value || 'all'
+    };
+    const data = await api('GET','getReport', params);
+    const res  = document.getElementById('report-results');
+    res.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value stat-accent">${fmt(data.totalSales)}</div></div>
+        <div class="stat-card"><div class="stat-label">Gross Profit</div><div class="stat-value stat-green">${fmt(data.totalProfit)}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value stat-amber">${fmt(data.totalExpenses)}</div></div>
+        <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value ${data.netProfit>=0?'stat-green':'stat-red'}">${fmt(data.netProfit)}</div></div>
+      </div>
+
+      <div class="tabs" id="report-tabs">
+        <div class="tab active" data-tab="items">Items (${data.rows.length})</div>
+        <div class="tab" data-tab="expenses">Expenses (${data.expenseRows.length})</div>
+      </div>
+
+      <div id="tab-items" class="card">
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Project</th><th>Item</th><th>Brand</th><th>Supplier</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Profit</th><th>Date</th></tr></thead>
+          <tbody>
+            ${!data.rows.length ? '<tr><td colspan="10" class="empty">No matching items.</td></tr>' :
+            data.rows.map((r,i) => `<tr>
+              <td>${i+1}</td>
+              <td><span class="badge badge-blue">${r.project}</span></td>
+              <td style="font-weight:600;color:var(--ink)">${r.ItemName}</td>
+              <td>${r.Brand||'—'}</td>
+              <td>${r.SupplierName||'—'}</td>
+              <td>${fmtNum(r.Qty)}</td>
+              <td>${fmt(r.CostPrice)}</td>
+              <td>${fmt(r.SellingPrice)}</td>
+              <td class="${+r.Profit>=0?'profit-pos':'profit-neg'}">${fmt(r.Profit)}</td>
+              <td>${r.Date||'—'}</td>
+            </tr>`).join('')}
+            <tr class="total-row"><td colspan="8">TOTAL</td><td class="profit-pos">${fmt(data.totalProfit)}</td><td></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <div id="tab-expenses" class="card" style="display:none">
+        <div class="table-wrap"><table>
+          <thead><tr><th>ID</th><th>Project</th><th>Expense</th><th>Amount</th><th>Date</th></tr></thead>
+          <tbody>
+            ${!data.expenseRows.length ? '<tr><td colspan="5" class="empty">No matching expenses.</td></tr>' :
+            data.expenseRows.map(e => `<tr>
+              <td><span class="badge badge-blue" style="font-family:var(--mono);font-size:10px">${e.ID}</span></td>
+              <td><span class="badge ${e.ProjectName==='Global'?'badge-amber':'badge-green'}">${e.ProjectName}</span></td>
+              <td style="font-weight:600;color:var(--ink)">${e.ExpenseName}</td>
+              <td style="color:var(--warning);font-weight:700">${fmt(e.Amount)}</td>
+              <td>${e.Date||'—'}</td>
+            </tr>`).join('')}
+            <tr class="total-row"><td colspan="3">TOTAL</td><td>${fmt(data.totalExpenses)}</td><td></td></tr>
+          </tbody>
+        </table></div>
+      </div>`;
+
+    document.querySelectorAll('#report-tabs .tab').forEach(t => {
+      t.onclick = () => {
+        document.querySelectorAll('#report-tabs .tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('tab-items').style.display    = t.dataset.tab==='items'    ? '' : 'none';
+        document.getElementById('tab-expenses').style.display = t.dataset.tab==='expenses' ? '' : 'none';
+      };
+    });
+  };
+
+  document.getElementById('r-run').onclick = runReport;
+  await runReport();
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE: BRAND ANALYSIS
+   ════════════════════════════════════════════════════════════ */
+async function renderBrands(root) {
+  const projects = await api('GET','getProjects');
+  const projOptions = `<option value="all">All Projects</option>` + projects.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  const today    = new Date().toISOString().split('T')[0];
+  const firstDay = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
+
+  root.innerHTML = `
+    <div class="section-hdr"><div><h2>Brand Analysis</h2><p>Purchase breakdown and brand performance</p></div></div>
+    <div class="filter-bar">
+      <div class="form-group"><label>From</label><input type="date" id="b-start" value="${firstDay}"/></div>
+      <div class="form-group"><label>To</label><input type="date" id="b-end" value="${today}"/></div>
+      <div class="form-group"><label>Project</label><select id="b-proj">${projOptions}</select></div>
+      <div style="align-self:flex-end"><button class="btn btn-primary" id="b-run">Analyze</button></div>
+    </div>
+    <div id="brand-results"></div>`;
+
+  const runBrands = async () => {
+    const params = {
+      startDate: document.getElementById('b-start').value,
+      endDate:   document.getElementById('b-end').value,
+      project:   document.getElementById('b-proj').value,
+    };
+    const data = await api('GET','getBrandAnalysis', params);
+    const res  = document.getElementById('brand-results');
+
+    if (!data.brands.length) {
+      res.innerHTML = '<div class="empty"><div class="big">◑</div><p>No brand data found for the selected filters.</p></div>';
+      return;
+    }
+
+    res.innerHTML = `
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">Purchase Share by Brand</div>
+          <div class="chart-container"><canvas id="brandPieChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">Top Brands by Purchase Volume</div>
+          <div class="chart-container"><canvas id="brandBarChart"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">Brand Breakdown — Total: ${fmt(data.grandTotal)}</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Brand</th><th>Total Purchases</th><th>Share</th><th>Items</th><th></th></tr></thead>
+          <tbody id="brand-tbody">
+            ${data.brands.map((b,i) => `
+              <tr class="brand-row" data-brand="${b.brand}" style="cursor:pointer">
+                <td style="font-weight:700;color:var(--ink)">${b.brand}</td>
+                <td style="font-weight:600">${fmt(b.totalPurchase)}</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:80px;height:6px;background:var(--paper2);border-radius:3px;overflow:hidden">
+                      <div style="width:${b.percentage}%;height:100%;background:var(--accent);border-radius:3px"></div>
+                    </div>
+                    <span style="font-size:12px;font-weight:700">${b.percentage}%</span>
+                  </div>
+                </td>
+                <td>${b.items.length} items</td>
+                <td style="font-size:12px;color:var(--accent)">▼ Drill down</td>
+              </tr>
+              <tr class="brand-detail" id="detail-${i}" style="display:none">
+                <td colspan="5" style="padding:0">
+                  <div style="background:var(--paper2);padding:12px 16px">
+                    <table style="width:100%">
+                      <thead><tr><th>Item</th><th>Project</th><th>Qty</th><th>Cost</th><th>Total</th><th>Date</th></tr></thead>
+                      <tbody>
+                        ${b.items.map(it => `<tr>
+                          <td>${it.ItemName}</td>
+                          <td><span class="badge badge-blue">${it.project}</span></td>
+                          <td>${fmtNum(it.Qty)}</td>
+                          <td>${fmt(it.CostPrice)}</td>
+                          <td style="font-weight:700">${fmt((+it.CostPrice||0)*(+it.Qty||0))}</td>
+                          <td>${it.Date||'—'}</td>
+                        </tr>`).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`;
+
+    // Drill-down toggle
+    document.querySelectorAll('.brand-row').forEach((row,i) => {
+      row.onclick = () => {
+        const det = document.getElementById('detail-'+i);
+        const showing = det.style.display !== 'none';
+        det.style.display = showing ? 'none' : '';
+        row.querySelector('td:last-child').textContent = showing ? '▼ Drill down' : '▲ Collapse';
+      };
+    });
+
+    // Charts
+    const colors = ['#00aaff','#00e5a0','#ffb300','#ff4757','#bf5af2','#00d4ff','#ff6b35','#a8ff78'];
+    chartInstances.push(new Chart(document.getElementById('brandPieChart').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: data.brands.map(b=>b.brand), datasets: [{ data: data.brands.map(b=>b.totalPurchase), backgroundColor: ['#00aaff','#00e5a0','#ffb300','#ff4757','#bf5af2','#00d4ff','#ff6b35','#a8ff78'].slice(0,data.brands.length), borderWidth:0, hoverOffset:8 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{family:'Syne',size:12}, boxWidth:12 } } } }
+    }));
+    chartInstances.push(new Chart(document.getElementById('brandBarChart').getContext('2d'), {
+      type: 'bar',
+      data: { labels: data.brands.map(b=>b.brand), datasets: [{ label:'Purchases', data: data.brands.map(b=>b.totalPurchase), backgroundColor: data.brands.map((_,i) => ['#00aaff','#00e5a0','#ffb300','#ff4757','#bf5af2','#00d4ff','#ff6b35','#a8ff78'][i%8]), borderRadius:6, borderSkipped:false }] },
+      options: { responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ callback:v=>v.toLocaleString('ar-IQ')+' IQD' } } } }
+    }));
+  };
+
+  document.getElementById('b-run').onclick = runBrands;
+  await runBrands();
+}
+
+/* ════════════════════════════════════════════════════════════
+   INIT — runs after DOM + Chart.js are fully loaded
+   ════════════════════════════════════════════════════════════ */
+window.addEventListener('load', function() {
+  try {
+    Chart.defaults.color = '#9fa8c7';
+    Chart.defaults.borderColor = 'rgba(0,170,255,.1)';
+    Chart.defaults.plugins.tooltip.backgroundColor = '#0e1220';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(0,170,255,.3)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.titleColor = '#00aaff';
+    Chart.defaults.plugins.tooltip.bodyColor = '#e8eaf6';
+    Chart.defaults.plugins.legend.labels.color = '#9fa8c7';
+    Chart.defaults.scale.grid.color = 'rgba(0,170,255,.07)';
+    Chart.defaults.scale.ticks.color = '#5c6490';
+  } catch(e) { console.warn('Chart.js defaults:', e); }
+
+  // Wire up nav clicks
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => navigate(el.dataset.page));
+  });
+
+  renderPage('dashboard');
+});
+</script>
+</body>
+</html>
